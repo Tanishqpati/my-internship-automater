@@ -1,0 +1,22 @@
+{
+  "manifest_version": 3,
+  "name": "Kalvium Token Saver",
+  "version": "1.0",
+  "description": "Saves Kalvium authentication tokens to your database",
+  "permissions": [
+    "webRequest",
+    "storage"
+  ],
+  "host_permissions": [
+    "*://auth.kalvium.community/*"
+  ],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "content_scripts": [
+    {
+      "matches": ["https://*.kalvium.community/*"],
+      "js": ["content.js"]
+    }
+  ]
+} 

@@ -1,0 +1,55 @@
+name: Daily Worklog Update
+
+on:
+  schedule:
+    # Runs at 13:00 UTC (6:30 PM IST)
+    - cron: "0 13 * * *"
+  workflow_dispatch: # Allows manual triggering
+
+jobs:
+  update-worklog:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: "18"
+
+      - name: Install dependencies
+        run: |
+          cd backend
+          npm install
+
+      - name: Start backend server
+        run: |
+          cd backend
+          node server.js &
+          sleep 5  # Wait for server to start
+
+      - name: Update Worklog
+        env:
+          USER_ID: ${{ secrets.KALVIUM_USER_ID }}
+          BACKEND_API: "http://localhost:3000"
+        run: |
+          # Get token from backend
+          TOKEN=$(curl -s "${BACKEND_API}/tokens/${USER_ID}" | jq -r '.token')
+
+          # Submit worklog
+          curl 'https://student-api.kalvium.community/api/internships/worklogs/'${USER_ID} \
+            -X 'PUT' \
+            -H 'accept: application/json' \
+            -H "authorization: Bearer ${TOKEN}" \
+            -H 'content-type: application/json' \
+            -H 'origin: https://kalvium.community' \
+            --data-raw '{
+              "title": "Today was a working day",
+              "description": "Regular working day",
+              "category": "regular",
+              "timeSpent": 480,
+              "priorityLevel": "medium",
+              "blockers": "",
+              "worklogs": "{\"content\":\"<p><strong>📋 Tasks completed today</strong></p><ul class=\\\"list-disc pl-6\\\"><li class=\\\"list-item\\\"><p>Worked on jira tickets</p></li><li class=\\\"list-item\\\"><p>Fixed one issue faced on prod which was crashing the site.<br></p></li></ul><p><strong>⚡ Challenges encountered and how you overcame them</strong></p><ul class=\\\"list-disc pl-6\\\"><li class=\\\"list-item\\\"><p>Fixed issue faced on production site</p></li></ul><p><br></p><p><strong>🚧 Blockers faced (challenges that you couldn\'t overcome)</strong></p><ul class=\\\"list-disc pl-6\\\"><li class=\\\"list-item\\\"><p>No blockers faced</p></li></ul>\"}"
+            }'
